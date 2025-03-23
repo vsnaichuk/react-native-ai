@@ -14,9 +14,11 @@ import {
   ComposerProps,
 } from 'react-native-gifted-chat';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
+import {KeyboardProvider} from 'react-native-keyboard-controller';
 import {generateUniqueId} from './utils';
 import LlamaService from './services/LlamaService';
 import {TokenData} from 'llama.rn';
+import DownloadIndicator from './components/DownloadIndicator';
 
 const Colors = {
   black: '#000',
@@ -93,6 +95,8 @@ const MESSAGES = {
 
 function App(): React.JSX.Element {
   const [messages, setMessages] = useState<IMessage[]>([]);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const onPartialCompletion = ({token}: TokenData) => {
     setMessages(prev =>
@@ -132,7 +136,11 @@ function App(): React.JSX.Element {
   };
 
   useEffect(() => {
-    LlamaService.initialize().then(() => {
+    LlamaService.initialize(progress => {
+      setDownloadProgress(progress);
+      setIsDownloading(true);
+    }).then(() => {
+      setIsDownloading(false);
       addMessage(AI, '');
       LlamaService.completion([MESSAGES.INTRO], onPartialCompletion);
     });
@@ -174,23 +182,29 @@ function App(): React.JSX.Element {
   );
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.black} />
-        <GiftedChat
-          messagesContainerStyle={styles.messagesContainer}
-          messages={messages}
-          onSend={handleSendMessagePress}
-          user={USER}
-          renderBubble={renderBubble}
-          renderSend={renderSend}
-          renderInputToolbar={renderInputToolbar}
-          renderComposer={renderComposer}
-          showUserAvatar
-          alwaysShowSend
-        />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <KeyboardProvider>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="light-content" backgroundColor={Colors.black} />
+          <DownloadIndicator
+            progress={downloadProgress}
+            visible={isDownloading}
+          />
+          <GiftedChat
+            messagesContainerStyle={styles.messagesContainer}
+            messages={messages}
+            onSend={handleSendMessagePress}
+            user={USER}
+            renderBubble={renderBubble}
+            renderSend={renderSend}
+            renderInputToolbar={renderInputToolbar}
+            renderComposer={renderComposer}
+            showUserAvatar
+            alwaysShowSend
+          />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </KeyboardProvider>
   );
 }
 

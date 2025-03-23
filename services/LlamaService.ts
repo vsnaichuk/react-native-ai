@@ -3,13 +3,13 @@ import {LlamaContext, RNLlamaOAICompatibleMessage, TokenData} from 'llama.rn';
 import FS from 'react-native-fs2/src';
 
 const DOWNLOAD_URL = 'https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B-Q3_K_L.gguf';
-const MODEL_FILENAME = 'llama-model.gguf';
+const MODEL_FILENAME = 'DeepSeek.gguf';
 const MODEL_PATH = `${FS.DocumentDirectoryPath}/${MODEL_FILENAME}`;
 
 class LlamaService {
   private context: LlamaContext | null = null;
 
-  private async downloadModel() {
+  private async downloadModel(onProgressUpdate?: (progress: number) => void) {
     try {
       const exists = await FS.exists(MODEL_PATH);
       if (exists) return;
@@ -17,9 +17,11 @@ class LlamaService {
       const {promise} = FS.downloadFile({
         fromUrl: DOWNLOAD_URL,
         toFile: MODEL_PATH,
+        begin: () => {},
         progress: status => {
           const progress = status.bytesWritten / status.contentLength;
           console.debug('Download progress:', progress);
+          onProgressUpdate?.(progress);
         },
       });
       await promise;
@@ -28,9 +30,9 @@ class LlamaService {
     }
   }
 
-  async initialize() {
+  async initialize(onProgressUpdate?: (progress: number) => void) {
     try {
-      await this.downloadModel();
+      await this.downloadModel(onProgressUpdate);
       this.context = await initLlama({
         model: MODEL_PATH,
         use_mlock: true, // force system to keep model in RAM
@@ -52,7 +54,7 @@ class LlamaService {
           messages,
           n_predict: 2048,
           ignore_eos: false,
-          stop: ['<｜end▁of▁sentence｜>'],
+          stop: ['<｜end▁of▁sentence｜>', '</s>'],
         },
         onPartialCompletion,
       );
