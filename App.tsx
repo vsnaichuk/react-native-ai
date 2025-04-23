@@ -4,7 +4,6 @@ import {
   GiftedChat,
   IMessage,
   User,
-  Bubble,
   InputToolbar,
   Send,
   Composer,
@@ -19,34 +18,15 @@ import {generateUniqueId} from './utils';
 import LlamaService from './services/LlamaService';
 import {TokenData} from 'llama.rn';
 import DownloadIndicator from './components/DownloadIndicator';
-
-const Colors = {
-  black: '#000',
-  white: '#fff',
-  userBubble: '#0070f3',
-  aiBubble: '#333',
-  composerBackground: '#333',
-  composerBorder: '#444',
-  sendIcon: '#999',
-};
+import ChatBubble from './components/Bubble';
+import { Colors } from './constants/colors';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.black,
   },
-  bubble: {
-    borderRadius: 15,
-    padding: 10,
-  },
-  userBubble: {
-    backgroundColor: Colors.userBubble,
-    borderBottomRightRadius: 0,
-  },
-  aiBubble: {
-    backgroundColor: Colors.aiBubble,
-    borderBottomLeftRadius: 0,
-  },
+
   text: {
     color: Colors.white,
   },
@@ -89,7 +69,7 @@ const AI = {_id: 'ai', avatar: require('./assets/img/ai-avatar.png')};
 const MESSAGES = {
   INTRO: {
     role: 'system',
-    content: 'Introduce yourself as helpful assistant!',
+    content: 'Hello! I am a helpful AI. How can I assist you today?',
   },
 };
 
@@ -141,8 +121,7 @@ function App(): React.JSX.Element {
       setIsDownloading(true);
     }).then(() => {
       setIsDownloading(false);
-      addMessage(AI, '');
-      LlamaService.completion([MESSAGES.INTRO], onPartialCompletion);
+      addMessage(AI, MESSAGES.INTRO.content);
     });
 
     return () => {
@@ -150,16 +129,7 @@ function App(): React.JSX.Element {
     };
   }, []);
 
-  const renderBubble = (props: BubbleProps<IMessage>) => (
-    <Bubble
-      {...props}
-      wrapperStyle={{
-        left: [styles.bubble, styles.aiBubble],
-        right: [styles.bubble, styles.userBubble],
-      }}
-      textStyle={{left: styles.text, right: styles.text}}
-    />
-  );
+  const renderBubble = (props: BubbleProps<IMessage>) => <ChatBubble {...props} />;
 
   const renderInputToolbar = (props: InputToolbarProps<IMessage>) => (
     <InputToolbar {...props} containerStyle={styles.inputToolbar} />
